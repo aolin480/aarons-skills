@@ -177,7 +177,12 @@ When the user references cross-workspace work:
    the current workspace/task boundary, preserve contracts that sibling
    workspaces depend on, and avoid speculative helpers or broad refactors unless
    the initiative packet or task goal explicitly requires them.
-11. Final handoffs for initiative-linked work must name both the workspace-local
+11. When the user explicitly activates the Initiative TaskForge Branch Workflow,
+    apply that workflow in every participating repository. Each repository gets
+    its own `taskforge/init-<number>` branch beneath that workspace's registered
+    primary branch; do not treat the branch in one repository as the integration
+    branch for sibling workspaces.
+12. Final handoffs for initiative-linked work must name both the workspace-local
     result and the cross-workspace impact. Mention linked blockers that remain,
     validation that proves the initiative contract, and any readiness notes that
     should be updated with `update_initiative_readiness`.
@@ -213,23 +218,40 @@ initiative execution, or coordinates work across more than one linked workspace.
 9. Final initiative handoffs must explain progress against the initiative title
    and cross-workspace goal, not only individual task completion.
 
-## Single-Workspace Initiative TaskForge Branch Workflow (Explicit Opt-In Only)
+## Initiative TaskForge Branch Workflow (Explicit Opt-In Only)
 
-Use this workflow when one initiative contains one or more epics and every
-linked epic belongs to exactly one TaskForge workspace whose `workingDirectory`
-is the active local project path. It extends the Epic TaskForge Branch Workflow
-with a rolling initiative integration branch:
+Use this workflow when the user explicitly takes on an initiative through
+TaskForge integration branches. It applies to both single-workspace and
+cross-workspace initiatives.
+
+An initiative branch is repository-local, not global. Create the same canonical
+`taskforge/init-<number>` branch in every distinct participating Git repository.
+Each repository keeps its own complete branch chain beneath that workspace's
+registered primary branch:
 
 ```text
-taskforge/task/<ticket>-<slug> -> taskforge/epic-<number>
-taskforge/epic-<number> -> taskforge/init-<number>
-taskforge/init-<number> -> <workspace.masterBranch>
+Workspace A repository:
+taskforge/task/A-1-<slug> -> taskforge/epic-10
+taskforge/epic-10 -> taskforge/init-1
+taskforge/init-1 -> <workspace-a.masterBranch>
+
+Workspace B repository:
+taskforge/task/B-1-<slug> -> taskforge/epic-11
+taskforge/epic-11 -> taskforge/init-1
+taskforge/init-1 -> <workspace-b.masterBranch>
 ```
 
-Do not use this workflow for a cross-workspace initiative, for epics spread
-across multiple repositories or working directories, or when TaskForge cannot
-prove the single workspace and project-path match. Use the Initiative-Aware
-Cross-Workspace Workflow in those cases.
+The matching initiative branch name may exist in multiple repositories because
+Git refs are repository-local. Never reuse one workspace's initiative branch as
+the base or merge target for an epic owned by another repository.
+
+Resolve repository identity from each workspace's configured
+`workingDirectory` and the local Git repository root. Do not infer it from a
+GitHub URL. If multiple TaskForge workspaces resolve to the same Git repository,
+create only one local `taskforge/init-<number>` ref. They may share it only when
+their configured primary branch and initiative ownership are compatible; stop
+for human direction when their registered primary branches disagree or the
+repository mapping is ambiguous.
 
 Activate it only when the user explicitly asks to take on or complete an
 initiative using the Initiative TaskForge Branch Workflow or explicitly asks
@@ -237,76 +259,116 @@ for a `taskforge/init-<number>` integration branch. Examples include:
 
 - "Take on INIT-9 using the Initiative TaskForge Branch Workflow."
 - "Complete INIT-9 through a taskforge/init-9 branch."
+- "Complete INIT-1 across its linked workspaces using a taskforge/init-1 branch
+  in each repository."
 
 Do not infer activation from an initiative link, a single linked epic, or the
-fact that all current epics happen to use one workspace.
+fact that the initiative spans multiple workspaces.
 
 Explicit activation is standing approval for clean, validated task-to-epic and
-epic-to-initiative merges performed during that initiative run. Always run the
-dry-run merge preflight first and send `approved: true` only after it succeeds.
-Standing approval never covers the final initiative-to-primary merge, merge
-conflict resolution, rebasing, force-pushing, destructive cleanup, or remote
-branch deletion.
+epic-to-repository-local-initiative merges performed during that initiative run.
+Always run the dry-run merge preflight first and send `approved: true` only after
+it succeeds. Standing approval never covers any final initiative-to-primary
+merge, merge conflict resolution, rebasing, force-pushing, destructive cleanup,
+or remote branch deletion.
+
+### Runtime Compatibility Gate
+
+Cross-workspace initiative execution requires the MCP runtime to store and
+return initiative branch context separately for every participating workspace or
+repository. Before changing Git state, confirm that
+`get_initiative_execution_packet`, `prepare_initiative_branch`, and
+`merge_initiative_branch` preserve the selected workspace, project path,
+initiative branch, base branch, merge target, and merge evidence without
+overwriting another participant's record.
+
+If the runtime exposes only one singular initiative branch context, rejects an
+initiative merely because its epics span workspaces, moves the initiative to
+`done` after only one participating repository merges, or otherwise behaves like
+the former single-workspace contract, stop and report the MCP runtime as stale
+or incompatible. Rebuild and reconnect it or update the server contract. Do not
+patch branch context manually and do not bypass the missing contract with manual
+Git merges.
 
 ### Initiative Bootstrap
 
-1. Resolve the initiative with `get_initiative_execution_packet`, resolve its
-   one workspace with `list_workspaces`, and treat the initiative title and goal
-   as the top-level execution contract.
-2. Confirm the initiative is `active`, has at least one linked epic, every
-   linked epic belongs to that workspace, the workspace has `strictBranching`
-   enabled with a configured `masterBranch`, and the active project path exactly
-   matches the workspace `workingDirectory`. Stop if any eligibility check
-   fails; do not approximate repository identity from a remote URL.
-3. Confirm the repository is clean and no merge, rebase, cherry-pick, or revert
-   is active. Synchronize the configured primary branch using the Primary
-   Branch Sync rules. Stop for human direction if it has diverged.
-4. From the synchronized primary branch, call `prepare_initiative_branch` with
-   the initiative reference, workspace, project path when needed, and
-   `apply: true`. Confirm the source is the primary branch and the result records
-   `taskforge/init-<number>` as the initiative `taskBranch`.
-5. Build a serial epic order from initiative plans, explicit blockers, and
-   readiness. Do not substitute ticket-number order for dependency order.
+1. Resolve the initiative with `get_initiative_execution_packet`, resolve every
+   participating workspace with `list_workspaces`, and treat the initiative title
+   and goal as the top-level execution contract.
+2. Build a participant map from each linked epic to its workspace, configured
+   `workingDirectory`, local Git repository root, and registered `masterBranch`.
+   Confirm the initiative is `active`, has at least one linked epic, every linked
+   epic resolves to a participant, and every participant has `strictBranching`
+   enabled with a configured primary branch and a valid local working directory.
+   Stop if any eligibility check fails.
+3. Apply the Runtime Compatibility Gate before preparing the first participant.
+   The initiative packet and branch tools must distinguish all participating
+   workspace or repository branch records.
+4. Build a serial epic order from initiative plans, explicit blockers,
+   cross-workspace dependencies, and readiness. Do not substitute ticket-number
+   order or workspace grouping for dependency order.
+5. Prepare each repository's initiative branch lazily when execution first
+   enters that repository. Switch to its configured `workingDirectory`, call
+   `set_project_context`, and confirm the returned Git root and branch belong to
+   that participant.
+6. Confirm that repository is clean and no merge, rebase, cherry-pick, or revert
+   is active. Synchronize its configured primary branch using the Primary Branch
+   Sync rules. Stop for human direction if it has diverged.
+7. From that synchronized primary branch, call `prepare_initiative_branch` with
+   the initiative reference, selected workspace, and exact project path, using
+   `apply: true`. Confirm the workspace-scoped result records
+   `taskforge/init-<number>` as `taskBranch` and the selected workspace's primary
+   branch as `baseBranch` without replacing another participant's context.
 
 ### Serial Epic Loop
 
-Work exactly one linked epic at a time. Each new epic branch starts from the
-latest validated `taskforge/init-<number>` branch, which must already contain
-all prior completed epics.
+Work exactly one linked epic at a time across the initiative. Each new epic
+branch starts from the latest validated `taskforge/init-<number>` branch in that
+epic's own repository. It must contain all prior completed epics for that
+repository; it is not expected to contain commits from sibling repositories.
 
 For each epic:
 
-1. Return to `taskforge/init-<number>`, confirm it is clean, and refresh the
-   initiative and epic execution packets. Confirm the epic is linked to the
-   initiative, belongs to the eligible workspace, and has no unfinished
-   blocker.
-2. From the initiative branch, call `prepare_task_branch` for the epic with
-   `apply: true`. Confirm the result records `taskforge/epic-<number>` as the
-   epic `taskBranch` and `taskforge/init-<number>` as its `baseBranch`.
-3. Execute that epic's child tasks serially using the Epic TaskForge Branch
+1. Resolve the epic's participant, switch to that workspace's configured
+   `workingDirectory`, call `set_project_context`, and confirm the project
+   context matches the expected Git repository and workspace.
+2. Return to that repository's `taskforge/init-<number>` branch, confirm it is
+   clean, and refresh the initiative and epic execution packets. Confirm the
+   epic is linked to the initiative, belongs to the selected workspace, its
+   repository-local initiative branch context is present, and it has no
+   unfinished local or cross-workspace blocker.
+3. From the repository-local initiative branch, call `prepare_task_branch` for
+   the epic with the selected `workspace` and `apply: true`. Confirm the result
+   records `taskforge/epic-<number>` as the epic `taskBranch` and the local
+   `taskforge/init-<number>` as its `baseBranch`.
+4. Execute that epic's child tasks serially using the Epic TaskForge Branch
    Workflow. Every child uses
    `taskforge/task/<ticket-number>-<slugified-title>`, branches from the current
    epic branch, validates fully, moves to `review`, preflights its merge, merges
    cleanly into the epic branch under standing initiative approval, and then
    moves to `done`.
-4. After all non-archived children are `done` or `finalized`, run and record the
+5. After all non-archived children are `done` or `finalized`, run and record the
    epic-level validation on `taskforge/epic-<number>`, then move the epic to
    `review`.
-5. Call `merge_task_branch` for the epic with `apply: false` and
+6. Call `merge_task_branch` for the epic with the selected workspace,
+   `apply: false`, and
    `targetBranch: "taskforge/init-<number>"`. Stop on conflicts, stale branch
-   context, source/target mismatch, or incomplete validation.
-6. After clean preflight, call the same merge with `apply: true`,
+   context, workspace/repository mismatch, source/target mismatch, or incomplete
+   validation.
+7. After clean preflight, call the same merge with `apply: true`,
    `approved: true`, and the same target. Explicit initiative activation is the
    approval for this clean epic-to-initiative merge; do not ask separately.
-7. Confirm the merge commit is present on the initiative branch and the epic's
-   persisted branch context records the initiative target. Then move the epic
-   from `review` to `done`. The strict completion gate accepts recorded,
-   SHA-backed epic merge evidence into the matching initiative branch.
-8. Delete a local epic or task branch only when Git proves it fully merged into
+8. Confirm the merge commit is present on the repository-local initiative
+   branch and the epic's persisted branch context records that target. Then move
+   the epic from `review` to `done`. The strict completion gate accepts recorded,
+   SHA-backed epic merge evidence only into the matching participant's
+   initiative branch.
+9. Delete a local epic or task branch only when Git proves it fully merged into
    its intended integration target. Use `git branch -d`, never `-D`; never
    delete a remote branch without explicit approval.
-9. Re-read initiative plans, epic statuses, and blockers. Return to the updated
-   initiative branch and repeat for the next actionable epic.
+10. Re-read initiative plans, epic statuses, and local plus cross-workspace
+    blockers. Select the next actionable epic, switch to its participant, and
+    repeat from step 1.
 
 Do not create all epic branches at bootstrap. Creating each epic branch only
 when its turn begins ensures it starts from the latest initiative integration
@@ -317,37 +379,52 @@ state.
 Initiative statuses are `active`, `review`, `done`, and `archived`:
 
 - `active`: initiative execution is underway.
-- `review`: every linked epic is `done` or `finalized`, initiative-level
-  validation is recorded, and the complete implementation is waiting for human
-  review on `taskforge/init-<number>`.
-- `done`: the user explicitly approved the final merge and TaskForge recorded
-  the initiative branch merged into the workspace's configured primary branch.
+- `review`: every linked epic is `done` or `finalized`, every participating
+  repository has a prepared `taskforge/init-<number>` branch, initiative-level
+  validation is recorded, and all repository-local results are waiting for
+  human review.
+- `done`: the user explicitly approved every required final merge and TaskForge
+  recorded each participating repository's initiative branch merged into that
+  workspace's configured primary branch.
 - `archived`: administrative removal from active work; it is not a synonym for
   completion.
 
 When all linked epics are integrated:
 
-1. Run the initiative-level validation on `taskforge/init-<number>`, including
-   cross-epic tests and practical smoke coverage. Record the evidence and any
+1. In every participating repository, run the workspace-level validation on its
+   `taskforge/init-<number>` branch, including cross-epic tests and practical
+   smoke coverage. Then run the cross-workspace validation required by the
+   initiative contract. Record evidence by workspace and identify any
    intentionally archived or superseded work.
 2. Call `update_initiative_status` with `status: "review"`. TaskForge rejects
    this transition when there are no linked epics, a linked epic is unresolved,
-   or any linked epic is not `done` or `finalized`.
+   any linked epic is not `done` or `finalized`, a participating repository has
+   no prepared initiative branch, or required validation is missing.
 3. Give the user an implementation summary plus concrete manual test
-   instructions covering the full initiative. Leave the initiative branch
-   unmerged and ask for explicit approval naming the initiative and configured
-   primary target.
-4. After the user approves, call `merge_initiative_branch` with `apply: false`
-   to preflight the exact `taskforge/init-<number>` to
-   `<workspace.masterBranch>` merge.
+   instructions covering the full initiative, grouped by workspace. Leave every
+   initiative branch unmerged and ask for explicit approval naming the
+   initiative, workspace, and exact configured primary target for each final
+   merge. The user may approve all exact participant merges in one message or
+   approve them separately.
+4. For each explicitly approved participant, switch to its configured working
+   directory, refresh project context, and call `merge_initiative_branch` with
+   that `workspace`, exact `projectPath`, `apply: false`, and the selected
+   workspace's registered primary branch. Preflight the exact local
+   `taskforge/init-<number>` to `<workspace.masterBranch>` merge.
 5. If preflight is clean, call the same tool with `apply: true` and
-   `approved: true`. Confirm the returned merge SHA and persisted branch context
-   record the initiative source and primary target. The tool then moves the
-   initiative from `review` to `done`.
-6. If approval is absent or any source, target, ancestry, validation, or branch
-   context check disagrees, keep the initiative in `review` and stop. Never
-   treat workflow activation, elapsed time, "continue", or "finish" as final
-   merge approval.
+   `approved: true`. Confirm the returned merge SHA and workspace-scoped branch
+   context record the correct repository-local initiative source and primary
+   target. Merging one participant must not erase sibling branch records or move
+   a cross-workspace initiative to `done` while another required participant is
+   unmerged.
+6. Repeat the preflight and approved merge for each remaining participant. The
+   final successful participant merge may move the initiative from `review` to
+   `done` only after TaskForge confirms complete merge evidence for every
+   participating repository.
+7. If approval is absent for any participant, or any workspace, project path,
+   source, target, ancestry, validation, or branch-context check disagrees, keep
+   the initiative in `review` and stop. Never treat workflow activation, elapsed
+   time, `continue`, or `finish` as final merge approval.
 
 ## Source Shape Rule
 
@@ -524,10 +601,11 @@ Exception: when the user starts an explicit epic execution goal, agents may run
 the Epic TaskForge Branch Workflow below instead of stopping at `review` for each child
 task.
 
-Exception: when the user explicitly activates the Single-Workspace Initiative
+Exception: when the user explicitly activates the Initiative
 TaskForge Branch Workflow, agents may complete clean task-to-epic and
 epic-to-initiative merges under its standing approval. The final
-initiative-to-primary merge still requires separate explicit user approval.
+initiative-to-primary merge in each participating repository still requires
+separate explicit user approval.
 
 Allowed completion transitions:
 
