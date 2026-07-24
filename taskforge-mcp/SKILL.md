@@ -290,6 +290,11 @@ or incompatible. Rebuild and reconnect it or update the server contract. Do not
 patch branch context manually and do not bypass the missing contract with manual
 Git merges.
 
+Modern initiative records expose participant-scoped `branchContexts`. A legacy
+singular `branchContext` remains compatible only when all linked epics resolve
+to one workspace; never reuse that singular context for a multi-workspace
+initiative.
+
 ### Initiative Bootstrap
 
 1. Resolve the initiative with `get_initiative_execution_packet`, resolve every
