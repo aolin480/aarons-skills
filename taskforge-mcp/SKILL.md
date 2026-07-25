@@ -53,6 +53,88 @@ Use this skill to work with a TaskForge MCP server as a structured task ledger.
 13. After location, project context, epic, blocker intent, and agent guidance are clear:
    call the appropriate TaskForge MCP tool with explicit structured fields.
 
+## Reasoning Preflight
+
+Before substantive TaskForge work, classify the current invocation or newly
+selected execution task into one deterministic work mode and recommend the
+lowest sufficient reasoning level:
+
+| Work mode | TaskForge operations | Recommendation |
+| --- | --- | --- |
+| `bounded_execution` | Execute an already planned task; update status, notes, validations, attachments, branches, or approved merges | `low` |
+| `planning` | Create or decompose tasks, epics, trees, dependencies, initiatives, or planning timelines from established requirements | `low` |
+| `investigation` | Diagnose blockers or failures; inspect history, runtime state, authorization, or conflicting evidence | `high` |
+| `architecture` | Make new cross-workspace, security, data-model, contract, or irreversible workflow decisions | `extra-high` |
+
+After resolving the mode, show exactly one concise advisory before substantive
+work and continue without asking for confirmation:
+
+```text
+Reasoning advisory: this is <work-mode> work, so <level> reasoning is sufficient; the active setting remains unchanged.
+```
+
+The advisory is guidance for the current or next dispatch. TaskForge and a
+running agent cannot change the active reasoning setting. Applying another
+level requires user action or a separate orchestrator dispatch or resume.
+
+Show the advisory once per invocation or once when a new execution task is
+selected. Do not repeat it for each MCP call, validation step, loop iteration,
+or automatic continuation of the same task. Re-evaluate only when the work
+changes modes or a different task is selected. If the current run cannot safely
+resolve a fork, record the recommended level, rationale, and whether redispatch
+is required.
+
+### Overrides, escalation, and unattended work
+
+When the selected task's execution packet contains
+`agentExecution.reasoning`, use that explicit guidance instead of the operation
+matrix. Treat it as dispatch advice, not an enforcement mechanism. If the field
+is absent, use the deterministic matrix above; do not inherit guidance from an
+epic, initiative, dependency, or neighboring task.
+
+Ordinary implementation friction does not change the work mode. Compiler
+errors, expected test failures, lint findings, a missed selector, or a localized
+bug remain `bounded_execution` while the planned design is still valid. Advise
+escalation only when the work exposes a material decision outside that plan,
+such as:
+
+- a cross-layer contract or data-model change;
+- conflicting requirements or evidence that invalidate the current plan;
+- a security, authorization, tenant, destructive, or irreversible choice;
+- an architectural blocker that cannot be resolved within the task's approved
+  scope.
+
+When escalation is warranted, append a task note that states the unresolved
+fork, evidence already gathered, recommended level, rationale, safe work that
+can continue, and the decision owner. Preserve structured
+`agentExecution.reasoning.requiresRedispatch` and `redispatchReason` when those
+fields are already available through the task update contract. Do not claim the
+current agent will switch levels: a user or separate orchestrator must dispatch
+or resume another run with the recommendation.
+
+For unattended work, continue independent, reversible steps that do not choose
+a branch of the unresolved decision. Pause only when progress requires human
+authority, an irreversible action, or a choice whose ambiguity remains unsafe
+at the current ceiling. The need for a higher reasoning level alone is not a
+pause condition.
+
+After the decision is recorded and the design is settled, follow explicit
+`returnLevel` and `returnConditions` when present. Otherwise recommend returning
+the next dispatch to `low` reasoning and `bounded_execution`; do not repeat the
+advisory during the current task unless its work mode changes again.
+
+Use these scenarios as the compatibility matrix for the advisor:
+
+| Scenario | Expected behavior |
+| --- | --- |
+| Create or decompose tasks from settled requirements | `planning` at `low`; advise once and continue |
+| Execute an approved task or fix an ordinary compiler/test failure | `bounded_execution` at `low`; do not escalate |
+| Diagnose conflicting runtime or authorization evidence | `investigation` at `high`; advise once and continue safe work |
+| Decide a new cross-layer contract, data model, or irreversible workflow | `architecture` at `extra-high`; record the decision owner and redispatch recommendation |
+| Task metadata explicitly recommends another mode or level | Use the task metadata; do not inherit or reclassify it |
+| An unattended run reaches an unresolved architectural fork | Record the evidence and recommendation, continue reversible independent work, and pause only at the authority or irreversible boundary |
+| The fork is resolved and the design is settled | Follow explicit return guidance or recommend the next dispatch return to `bounded_execution` at `low` |
+
 ## Human-Owned Agent Identity
 
 TaskForge agents are users for authentication and audit history, but each agent
