@@ -1,0 +1,4 @@
+interface:
+  display_name: "Clear Engineering Writing"
+  short_description: "Write precise, direct technical communication"
+  default_prompt: "Use $clear-engineering-writing to draft or revise this technical writing while preserving its meaning."
