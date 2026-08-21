@@ -208,6 +208,25 @@ branch or merge action.
 - Use `get_task_execution_packet` as the canonical intake for executable task
   context. Do not assemble execution context from scattered reads.
 
+## Gherkin acceptance specifications
+
+Tasks and epics support one optional top-level `gherkinSpec` document. Use the
+`gherkin-spec` skill to author a complete `.feature`-style document, then store
+it through the normal TaskForge task or epic tools.
+
+- Include `gherkinSpec` when creating a task or epic, including task and epic
+  tree inputs.
+- Use `update_task` to replace the document or clear it with `null` (blank
+  editor content is normalized to `null`). Omit the field when an update should
+  leave the existing document unchanged.
+- Keep `gherkinSpec` separate from `acceptanceCriteria`, which remains the
+  short checklist, and `agentExecution`, which remains structured execution
+  guidance.
+- Read the full document from `get_task` or the task execution packet. Compact
+  board and search records intentionally omit the document.
+- The field is opaque text in v1. TaskForge stores and returns it but does not
+  parse or generate Gherkin.
+
 ## Completion check
 
 Before reporting completion, confirm:
