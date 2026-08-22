@@ -8,6 +8,26 @@ description: Use when Codex needs to create, search, update, review, execute, br
 Use TaskForge as the structured ledger for planned and executed work. Keep the
 repository, TaskForge ticket, branch, evidence, and approval state consistent.
 
+## Agent orchestration is opt-in
+
+TaskForge is a task ledger by default. Do not select, preflight, require, or
+spawn the repository-owned TaskForge Terra/Sol roles unless the current user
+explicitly confirms that they want to use the TaskForge agent system for the
+current task or epic.
+
+Using TaskForge, executing a TaskForge ticket, running in an eligible Codex
+host, finding configured role files, or reading `agentExecution` guidance is not
+confirmation. Prior confirmation for other work is not confirmation for the
+current task or epic. When Sol Advisor or another orchestrator is active, keep
+that orchestrator in control unless the current user explicitly asks TaskForge
+to replace or supplement it.
+
+Without explicit opt-in, continue through the ordinary TaskForge workflow. Do
+not ask the user to enable the TaskForge agent system merely because the current
+host is eligible. Do not read the attended routing reference, run its role
+preflight, spawn its roles, append attended `codex-*` evidence, or treat missing
+TaskForge roles as a blocker.
+
 ## Required workflow
 
 1. Classify the work with the Reasoning Preflight and show its advisory once.
@@ -27,9 +47,10 @@ repository, TaskForge ticket, branch, evidence, and approval state consistent.
 
 ## Codex host guard
 
-Before selecting repository-owned Terra/Sol roles, determine the current agent
-harness from first-party runtime identity or native capabilities exposed by that
-harness. The attended route is eligible only in Codex CLI or Codex Desktop.
+Only after the agent-orchestration opt-in gate passes, determine the current
+agent harness from first-party runtime identity or native capabilities exposed
+by that harness. The attended route is eligible only in Codex CLI or Codex
+Desktop. A confirmed Codex host does not activate the attended route by itself.
 
 Do not infer the harness from a TaskForge actor or agent name, `source.createdBy`,
 `sourceAgent`, ticket provenance, credentials, environment branding, or the
@@ -62,7 +83,7 @@ to bottom; its rules are normative.
 | Run the explicit epic branch workflow | [epic-workflow.md](references/epic-workflow.md) plus [branching-and-approvals.md](references/branching-and-approvals.md) |
 | Work with initiatives or run the explicit initiative branch workflow | [initiative-workflow.md](references/initiative-workflow.md) plus [branching-and-approvals.md](references/branching-and-approvals.md) |
 | Check identity, authorization, or create an agent browser session | [auth-browser-and-identity.md](references/auth-browser-and-identity.md) |
-| Use repository-owned Terra/Sol roles from an eligible Codex CLI or Codex Desktop host | [attended-codex-routing.md](references/attended-codex-routing.md) plus [execution-contracts.md](references/execution-contracts.md) |
+| Current user explicitly opts in to repository-owned Terra/Sol roles and the Codex host guard selects the attended route | [attended-codex-routing.md](references/attended-codex-routing.md) plus [execution-contracts.md](references/execution-contracts.md) |
 
 For an action that crosses rows, read every named reference. Example: executing
 and merging an ordinary task requires the ticket, execution, evidence, and
@@ -148,6 +169,11 @@ next dispatch return to `bounded_execution` at `low`.
 - Agents move finished work from `in_progress` to `review`, never directly to
   `done`. Moving `review` to `done` requires an explicit user or TaskForge
   request. A blocked ticket must first return to a live lane.
+- Before moving branch-bound work from `review` to `done`, require the successful
+  `merge_task_branch` result to return a 40-character `mergeCommitSha` and the
+  returned task's persisted `branchContext.mergeCommitSha` to equal it. Apply
+  this requirement to both new merges and `action: "already_merged"`; Git
+  ancestry without matching returned and persisted SHA evidence is incomplete.
 - A branchless ordinary task is created with `branchless: true`,
   `entityType: "task"`, and no `branchContext`. `branchless` is create-time only.
   TaskForge stores immutable server-generated creation proof and records branch
@@ -309,4 +335,6 @@ Before reporting completion, confirm:
    channels and contain no secret material.
 6. Any correction invalidated stale evidence and received fresh checks.
 7. Any primary-branch merge had explicit approval for that exact action.
-8. The final status follows the `in_progress -> review -> done` contract.
+8. Branch-bound completion has matching non-null returned and persisted
+   40-character merge SHA evidence.
+9. The final status follows the `in_progress -> review -> done` contract.
