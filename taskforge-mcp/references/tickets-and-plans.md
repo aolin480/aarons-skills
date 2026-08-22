@@ -167,7 +167,8 @@ Status contract:
    initiatives, and tasks with missing marker, context, creation, or
    branch-provenance evidence remain merge-gated.
 5. Never move `in_progress -> done` directly.
-6. Move a blocked ticket to a live lane before the normal review path.
+6. Apply the root Blocked-ticket decision before moving a blocked ticket to a
+   live lane or the normal review path.
 7. Use `archived` to archive and a suitable live status to restore.
 
 When work enters `done` or `finalized`, TaskForge locks `doneAt`. Use `doneAt`
@@ -182,14 +183,15 @@ context, or branch evidence.
 A ticket is agent-ineligible when:
 
 - its own status is `blocked`;
-- any blocker is not `done` or `finalized`;
+- any blocker is not `done`, `finalized`, or `archived`;
 - its execution packet reports a missing or contradictory required contract;
 - its project or branch context conflicts with the current checkout.
 
-An agent may mark a ticket blocked, then must stop work on it. It cannot unblock
-its own ticket merely to continue. Resume only after a human or TaskForge moves
-it to a non-blocked status. Re-read the execution packet after unblocking or
-after blocker completion.
+When the ticket's own status is `blocked`, apply the root Blocked-ticket
+decision before continuing. An agent may move a cleared ticket from `blocked`
+to `ready` only after it records the required evidence Note. Re-read the
+execution packet after that transition or after a blocker completes. Keep a
+hard block in place until its concrete resume condition is met.
 
 Valid blocker updates include cross-workspace references:
 

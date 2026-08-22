@@ -34,10 +34,11 @@ For an ordinary task, also read the parent epic packet when it exists. For an
 initiative-linked epic or task, also read the initiative packet as required by
 the root routing table.
 
-Stop when the ticket is blocked, a blocker is unfinished, a required goal or
-boundary is missing, a required prerequisite cannot be met, or the project and
-branch context conflict with the checkout. Do not silently narrow, ignore, or
-invent missing contract fields.
+When the ticket is blocked, apply the root Blocked-ticket decision before
+implementation. Stop when that decision finds an unresolved blocker, a required
+goal or boundary is missing, a required prerequisite cannot be met, or the
+project and branch context conflict with the checkout. Do not silently narrow,
+ignore, or invent missing contract fields.
 
 Re-read the packet before a status completion or merge when implementation,
 review, blockers, branch state, or ledger state may have changed.

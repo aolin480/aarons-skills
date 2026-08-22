@@ -141,10 +141,10 @@ next dispatch return to `bounded_execution` at `low`.
   workspace epics, never individual tasks.
 - Treat true prerequisites as blockers. Timeline order is not automatically a
   dependency.
-- A dependent ticket is eligible only when every blocker is `done` or
-  `finalized`. Re-read its execution packet before starting.
-- Treat `blocked` as agent-ineligible. An agent may block a ticket but may not
-  resume it until a human moves it to a live status.
+- A dependent ticket is eligible only when every blocker is `done`, `finalized`,
+  or `archived`. Re-read its execution packet before starting.
+- Treat `blocked` as a condition that requires the Blocked-ticket decision
+  below. It is not blanket evidence that a human must act.
 - Agents move finished work from `in_progress` to `review`, never directly to
   `done`. Moving `review` to `done` requires an explicit user or TaskForge
   request. A blocked ticket must first return to a live lane.
@@ -164,6 +164,33 @@ next dispatch return to `bounded_execution` at `low`.
   numbering. Prefix migrations must follow the repository runbook and explicit
   approval contract.
 - Archive with `status: "archived"`; restore with an appropriate live status.
+
+## Blocked-ticket decision
+
+`blocked` means the agent must classify the condition before it continues. It
+does not by itself require a human status change.
+
+1. Read a fresh execution packet and the parent packet when applicable. Read
+   task history when the blocking reason or its owner is unclear.
+2. Keep the ticket blocked when there is an unresolved dependency, missing
+   required contract or prerequisite, project or branch conflict, required
+   human decision or approval, or a security, destructive, or irreversible
+   action outside the agent's authority. Append a Note with the evidence,
+   blocking condition, decision owner, and concrete resume condition.
+3. An agent may decide that a block is cleared when fresh evidence shows that
+   the recorded condition is resolved or was stale, every dependency is closed,
+   the execution contract and checkout still match, and no human-owned action
+   is needed for the next safe step. Append a Note that identifies the evidence
+   and the decision to resume.
+4. After recording that decision, use `update_task_status` to move the ticket
+   from `blocked` to `ready`. Re-read the execution packet, then follow the
+   normal `ready -> in_progress -> review` path. Do not clear or alter blockers,
+   scope, approvals, or branch evidence merely to make the ticket eligible.
+
+Do not use `blocked` for routine validation, committing, review, or a pending
+primary-branch approval. Keep completed work in `review` while the approval
+stop applies. The Blocked-ticket decision never grants merge approval or other
+human-owned authority.
 
 ## Evidence invariants
 
@@ -213,6 +240,49 @@ branch or merge action.
 Tasks and epics support one optional top-level `gherkinSpec` document. Use the
 `gherkin-spec` skill to author a complete `.feature`-style document, then store
 it through the normal TaskForge task or epic tools.
+
+The shared contract bounds `gherkinSpec` to `TASK_GHERKIN_SPEC_MAX_LENGTH` —
+20,000 JavaScript string characters — across the shared schemas, API, and MCP
+server. Treat that limit as a hard request boundary:
+
+- Aim for 18,000 characters or fewer so edits and formatting have headroom.
+- Measure the trimmed document before create or update. Never silently truncate,
+  split a line in the middle of a scenario, or retry the same oversized payload.
+- If a specification exceeds 20,000 characters, split it by coherent behavior:
+  keep the epic spec as the cross-cutting outcome and create child tasks with
+  focused Feature/Scenario documents. Preserve the relationship in the task
+  descriptions, acceptance criteria, or append-only Notes.
+- Prefer Scenario Outlines and concise shared steps when repeated examples are
+  the only source of excess length. If the behavior cannot be split cleanly,
+  keep a short bounded `gherkinSpec` index and store the complete `.feature`
+  document as a repository file or text attachment instead of losing content.
+- Report the split or external-source decision in a Note so later agents know
+  where the complete acceptance behavior lives.
+
+When overflow must continue in another TaskForge task, use this relationship
+instead of truncating the parent document:
+
+- Keep the original task as the implementation parent. Create the continuation
+  in the same epic with the title `Gherkin: <original task title>`; if more than
+  one continuation is required, use `Gherkin 2: <original task title>`, then
+  increment the number.
+- Put only the overflow Feature/Scenario content in the continuation's
+  `gherkinSpec`. Record the split boundary and the parent ticket in an
+  append-only Note on both tasks.
+- Add the original task as a blocker of the continuation with
+  `add_task_blockers` or `set_task_blockers`. Do not add the continuation as a
+  blocker of the parent. The continuation is the dependent task and must stay
+  `blocked` while the parent blocker remains unfinished.
+- Closing the parent does not automatically promote a `blocked` continuation.
+  After the blocker closes, apply the Blocked-ticket decision before moving the
+  continuation to a live lane. The parent closing alone is not sufficient
+  evidence that the continuation's full execution contract is now executable.
+- The current TaskForge eligibility contract treats `done`, `finalized`, and
+  `archived` as closed blockers; `review` alone does not currently unblock a
+  dependent task in planning selection. If review-state unblocking is desired,
+  create a separate approved lifecycle change and update the shared API, plan,
+  MCP, and tests together. Do not claim that a Note or title convention changes
+  runtime eligibility.
 
 - Include `gherkinSpec` when creating a task or epic, including task and epic
   tree inputs.

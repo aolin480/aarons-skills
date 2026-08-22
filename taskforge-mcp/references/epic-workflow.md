@@ -40,8 +40,8 @@ and `approved`.
 
 1. Resolve the workspace, epic, registered `masterBranch`, working directory,
    project context, active plan, children, and blockers.
-2. Stop if the epic is archived, finalized, blocked, or has an unfinished
-   blocker.
+2. If the epic is blocked, apply the root Blocked-ticket decision. Stop if the
+   epic is archived, finalized, or has an unresolved blocker.
 3. Confirm a clean repository and no active Git operation.
 4. Synchronize the registered primary branch under the branching reference.
    Stop on divergence.
@@ -70,8 +70,9 @@ For every child:
 
 1. Return to the matching epic branch. Confirm it is clean and contains all
    earlier child merges.
-2. Read the child execution packet and reconcile it with the epic packet. Stop
-   on blocked status, unfinished blockers, contradictory scope, missing
+2. Read the child execution packet and reconcile it with the epic packet. When
+   the child is blocked, apply the root Blocked-ticket decision. Stop on an
+   unresolved block, unfinished blockers, contradictory scope, missing
    prerequisites, or project/branch mismatch.
 3. From the epic branch, call `prepare_task_branch` with workspace and
    `apply: true`.

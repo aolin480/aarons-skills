@@ -62,8 +62,10 @@ Before every worker or reviewer spawn, the parent must:
    server or a similarly named built-in role.
 5. Read the target execution packet and its parent epic packet for an ordinary
    child task.
-6. Stop on a blocked ticket, unfinished blocker, missing goal, missing path
-   boundary, missing validation plan, or inconsistent project or branch context.
+6. When a ticket is blocked, have the active parent apply the root
+   Blocked-ticket decision before dispatch. Stop on an unresolved blocker,
+   missing goal, missing path boundary, missing validation plan, or inconsistent
+   project or branch context.
 7. Capture the immutable Git base. Use the actual integration base for a task
    branch, not current `HEAD` by convenience.
 8. Append one `codex-dispatch-intent` Validation before spawning. Its summary or
