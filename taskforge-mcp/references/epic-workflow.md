@@ -1,175 +1,145 @@
 # Epic TaskForge branch workflow
 
-Read this reference completely only when the user explicitly activates the Epic
-TaskForge Branch Workflow. Also read the root-routed branching, execution, and
-evidence references before acting.
+Read this reference only when the user explicitly activates the Epic TaskForge
+Branch Workflow. Also read the root-routed lifecycle, branching, execution, and
+evidence references; they own shared status, proof, merge, approval, sync,
+cleanup, and evidence rules.
 
-## Contents
-
-- Activation and authority
-- Bootstrap
-- Serial child loop
-- Runtime freshness
-- Epic validation and review
-- Final epic merge
-
-## Activation and authority
+## Activation
 
 This workflow completes an epic through a rolling
-`taskforge/epic-<number>` integration branch. It applies to any work type but is
-never inferred from ticket type.
+`taskforge/epic-<number>` integration branch. It applies to any work type but
+is never inferred from ticket type, planning, a single child, or several ready
+children. Those cases use ordinary task execution and stop at `review`.
 
-Activate only when the user explicitly asks to execute the whole epic as one
-goal or requests its TaskForge epic branch. Do not activate for planning an
-epic, working one child, or merely noticing several ready children. Those use
-ordinary task execution and stop at `review`.
-
-Explicit activation grants standing approval only for clean child-task merges
-into the matching epic integration branch during this run. It does not approve:
-
-- an epic or child merge into the registered primary branch;
-- conflict resolution or rebasing;
-- force-pushing;
-- destructive cleanup or remote branch deletion;
-- continuing after the user changes the epic, target, or instruction.
-
-Always preflight a standing-approved merge and send JSON booleans for `apply`
-and `approved`.
+Activation grants standing approval only for clean child merges into the
+matching epic branch during this run. The branching reference lists all actions
+that still need human approval. Always preflight a standing-approved merge and
+send JSON booleans for `apply` and `approved`.
+The standing approval ends if the user changes the epic, target, or instruction.
 
 ## Bootstrap
 
-1. Resolve the workspace, epic, registered `masterBranch`, working directory,
-   project context, active plan, children, and blockers.
-2. If the epic is blocked, apply the root Blocked-ticket decision. Stop if the
-   epic is archived, finalized, or has an unresolved blocker.
-3. Confirm a clean repository and no active Git operation.
-4. Synchronize the registered primary branch under the branching reference.
-   Stop on divergence.
-5. Create or select lowercase `taskforge/epic-<number>` from synchronized
-   primary. Never create it from a child, stale feature branch, or another epic.
-6. Call `get_task_execution_packet` for the epic. Treat its goal, acceptance
-   criteria, `agentExecution`, blockers, initiative context, validation, and
-   safety as the integration contract. Creating the empty epic branch is the
-   sole exception to packet-before-branch ordering; no status or implementation
-   change may precede packet intake.
-7. Build child order from blockers and the active plan. Use
-   `get_next_planned_task` when a plan exists. Do not use ticket number order.
-8. Resolve archived or skipped children and record why they are outside scope.
-9. Move the epic to `in_progress` only after branch, packet, order, prerequisites,
-   and blockers are valid. Do not create a synthetic `taskforge/task/EPIC-*`.
+1. Resolve the workspace, epic, registered primary, working directory, project
+   context, plan, children, and blockers.
+2. Apply the lifecycle blocked-ticket decision. Stop for an archived or
+   finalized epic or unresolved blocker.
+3. Pass the branching clean-repository and primary-synchronization gates.
+4. Create or select lowercase `taskforge/epic-<number>` from synchronized
+   primary. Never start it from a child, stale feature, or another epic.
+5. Read the epic execution packet. Its goal, acceptance criteria,
+   `agentExecution`, blockers, initiative context, Validation, and safety are
+   the integration contract. Creating the empty epic branch is the only
+   packet-before-branch exception; no status or implementation change may come
+   first.
+6. Order children from blockers and the active plan. Use
+   `get_next_planned_task` when a plan exists; never use ticket-number order.
+7. Resolve archived or skipped children and record why they are out of scope.
+8. Move the epic to `in_progress` only after branch, packet, order,
+   prerequisites, and blockers are valid. Never create
+   `taskforge/task/EPIC-*`.
 
-For a pre-cutover epic, use its authoritative `release/epic-<number>` branch
-under the legacy rules instead of creating a parallel TaskForge branch.
+Use an authoritative `release/epic-<number>` branch for a legacy epic instead
+of creating a parallel TaskForge branch.
 
 ## Serial child loop
 
-Work exactly one child at a time so each task starts from the complete validated
-integration result of its predecessor.
+Work one child at a time so each starts from the complete validated result of
+its predecessor.
 
-For every child:
-
-1. Return to the matching epic branch. Confirm it is clean and contains all
-   earlier child merges.
-2. Read the child execution packet and reconcile it with the epic packet. When
-   the child is blocked, apply the root Blocked-ticket decision. Stop on an
-   unresolved block, unfinished blockers, contradictory scope, missing
+1. Return to the clean matching epic branch and confirm all earlier child
+   merges are present.
+2. Read and reconcile the child and epic packets. Apply the lifecycle blocked
+   decision. Stop for unfinished blockers, contradictory scope, missing
    prerequisites, or project/branch mismatch.
 3. From the epic branch, call `prepare_task_branch` with workspace and
    `apply: true`.
-4. Confirm returned and persisted context records the child as `taskBranch` and
-   the matching epic integration branch as `baseBranch`. A mismatch means the
-   runtime is stale or incompatible; do not patch context manually.
-5. Move the child to `in_progress` only after that confirmation. Implement only
-   its scope on the child branch.
-6. Evaluate the root Codex host guard before selecting a child execution lane.
-   On Codex CLI or Codex Desktop, apply the attended routing reference and its
-   fail-closed role preflight. On Claude, another non-Codex harness, or an
-   unknown harness, continue through the ordinary TaskForge workflow without
-   Terra/Sol dispatch or attended `codex-*` evidence.
-7. Commit under the repository convention and append the full commit reference.
-8. Run the complete child gate:
-   - every required `validationPlan` item or an explicit `skipped` result;
-   - stack-required tests, typecheck, lint, build, doctors, and review;
-   - exact-revision fresh Sol review only when the host guard selected attended
-     Codex routing; otherwise use the repository's ordinary review checks;
-   - practical API, browser, or local smoke coverage when possible;
-   - safe screenshots for UI work;
-   - Node inspector breakpoint and evaluation evidence for backend runtime
-     changes when applicable, or explicit `skipped` evidence with reason.
-9. Do not merge with incomplete, failing, stale, or ambiguous evidence. Fix
-   within scope, block for a real external blocker, or stop for human direction.
-10. Move complete work `in_progress -> review`.
-11. Call `merge_task_branch` with `apply: false` and the exact epic integration
-    branch as `targetBranch`.
-12. Stop on conflict, blocked result, or source/target/context disagreement.
-13. After clean preflight, call the same merge with `apply: true` and
-    `approved: true`. Do not request separate child approval.
-14. Confirm the child commit is on the epic branch and persisted merge evidence
-    is correct. Only then move `review -> done`.
-15. Delete the local child branch only when Git proves it merged; use
-    `git branch -d`, never `-D`, and never delete a remote branch without explicit
-    approval.
-16. Refresh plan, statuses, and blockers; select the next eligible child and
-    repeat from the updated epic branch.
+4. Confirm returned and persisted context names the child branch and matching
+   epic base. Do not patch a mismatch manually.
+5. Move the child to `in_progress`, then implement only its scope. When the
+   packet reports Gherkin, run the familiarization checkpoint after source
+   orientation and before substantive implementation.
+6. Apply root orchestration opt-in before selecting a lane. Only an opted-in,
+   host-guarded Codex route uses attended dispatch and `codex-*` evidence.
+7. Commit under repository rules and append the full commit reference.
+8. Complete all required `validationPlan` items or record explicit
+   `skipped` results. Add stack-required tests, typecheck, lint, build,
+   doctors, review, practical smoke evidence, safe UI screenshots, and backend
+   debugger evidence when applicable. Use exact-revision Sol review only for
+   the selected attended route; otherwise use ordinary repository review.
+9. Do not merge incomplete, failing, stale, or ambiguous evidence. Repair
+   in-scope failures, block on a real external condition, or stop for human
+   direction.
+10. Move the child `in_progress -> review`.
+11. If Gherkin exists, run its unchanged-candidate acceptance checkpoint.
+12. Preflight `merge_task_branch` into the exact epic branch with
+    `apply: false`; stop on conflict, blocked outcome, or source, target, or
+    context mismatch.
+13. Apply the clean merge with `apply: true` and `approved: true` under the
+    standing approval.
+14. Apply the lifecycle completion-proof gate, then move
+    `review -> done`. The branching reference owns normal and validation-only
+    no-change proof.
+15. Apply safe local cleanup, refresh plans, statuses, and blockers, then select
+    the next eligible child from the updated epic branch.
 
-Do not create all child branches during bootstrap. Lazy creation keeps every
-base current.
+Create child branches lazily. Creating all branches at bootstrap gives them
+stale bases.
 
 ## Runtime freshness
 
-After changing MCP source, schemas, or workflow behavior, build the MCP server
-and reconnect every client that will validate it. A long-running client may keep
-old descriptions, schemas, and handlers after a successful build.
+After changing MCP source, schemas, or workflow behavior, build the server and
+reconnect every validating client. A long-running client can retain old
+descriptions, schemas, and handlers.
 
 Use `get_session_health` to confirm the intended authenticated runtime and
-project. If a live tool behaves like an older version, validate the new build
-independently and reconnect before diagnosing release code.
+project. If a live tool appears stale, validate the new build independently and
+reconnect before diagnosing release code.
 
-For Epic closeout changes in TaskForge, run the built protocol smoke after the
-MCP build:
+For TaskForge epic-closeout changes, run after the MCP build:
 
 ```bash
 pnpm exec tsx mcp-server/src/smoke/epic-release-closeout.ts
 ```
 
-## Epic validation and review
+## Epic review
 
-After every child is `done`, `finalized`, or intentionally archived:
+After every child is done, finalized, or intentionally archived:
 
-1. Run the epic-level plan on the integrated epic branch, including cross-task
-   checks, smoke coverage, and backend debugger evidence when applicable.
-2. Record integration Validation on the epic with commands, branch, target,
-   relevant SHAs, and archived or superseded children.
-3. Move the epic to `review`.
-4. Leave the epic branch unmerged.
-5. Summarize completed and intentionally skipped work plus manual test steps.
-6. Ask once for explicit approval of the exact epic-to-primary merge.
+1. Run the epic plan on the integrated branch, including cross-task checks,
+   smoke, backend debugger evidence when applicable, and the epic Gherkin
+   checkpoint when nonblank. Reuse a passing checkpoint only while the source
+   commit and spec are unchanged.
+2. Record epic Validation with commands, branch, target, relevant SHAs, and
+   archived or superseded children.
+3. Move the epic to `review`, leave its branch unmerged, summarize completed
+   and skipped work plus manual tests, and ask once for exact epic-to-primary
+   approval.
 
-Original workflow activation is not approval for the final primary merge.
+Workflow activation is not final-primary approval.
 
 ## Final epic merge
 
-After explicit approval for the exact epic and registered primary branch:
+After explicit approval:
 
 1. Synchronize primary under the branching reference.
-2. Call `merge_task_branch` for `EPIC-<number>` with workspace, exact registered
-   primary `targetBranch`, `apply: false`, and `projectPath` when needed.
-3. Require the source to be the canonical `taskforge/epic-<number>` or applicable
-   authoritative legacy branch. A synthetic `taskforge/task/EPIC-*` source or
-   another epic target is a contract failure.
-4. Accept `action: "already_merged"` only when local Git proves the integration
-   source is an ancestor of primary.
-5. After clean preflight, call the same tool with `apply: true` and
-   `approved: true`.
-6. Confirm the returned merge SHA equals primary `HEAD` and persisted context
-   records the correct source and target.
-7. Stop on source, target, ancestry, SHA, or context disagreement. Do not repair
-   it with a synthetic branch or silent manual merge.
-8. Confirm every non-archived child is `done` or `finalized` and each archived
-   child is intentionally outside scope.
-9. Confirm epic Validation contains merge and release evidence.
-10. Move the epic `review -> done` only when explicitly requested.
+2. Preflight `merge_task_branch` for `EPIC-<number>` into the exact registered
+   primary with `apply: false`, passing workspace and `projectPath` when needed.
+3. Require the canonical `taskforge/epic-<number>` or authoritative legacy
+   source. A synthetic task branch or another epic target is invalid.
+4. Accept `action: "already_merged"` only when local Git proves the source is
+   an ancestor of primary.
+5. Apply the clean result with `apply: true` and `approved: true`.
+6. For a new merge, require the returned and persisted 40-character SHA to
+   equal primary `HEAD`. For `already_merged`, require the returned and
+   persisted SHA to identify the verified source integration commit on
+   primary's first-parent path; primary may have advanced.
+7. Stop on any source, target, ancestry, SHA, or context disagreement. Never
+   repair it with a synthetic branch or silent manual merge.
+8. Confirm every non-archived child is done or finalized and archived children
+   are intentionally outside scope. Confirm epic Validation contains merge and
+   release evidence.
+9. Move `review -> done` only when explicitly requested.
 
-If TaskForge rejects completion despite proven merge evidence, treat it as a
-branch-gate mismatch. Keep the epic in review, record the evidence, report the
-exact mismatch, and do not retry in a loop.
+If completion is rejected despite proven merge evidence, keep the epic in
+`review`, record the branch-gate mismatch, and do not retry in a loop.
