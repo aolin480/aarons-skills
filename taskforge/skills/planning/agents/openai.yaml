@@ -1,0 +1,4 @@
+interface:
+  display_name: "TaskForge Planning"
+  short_description: "Create an engineering plan and stop before tasking"
+  default_prompt: "Use $taskforge:planning for the requested planning workflow."

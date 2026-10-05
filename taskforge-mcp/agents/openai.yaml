@@ -1,4 +1,4 @@
 interface:
-  display_name: "TaskForge MCP"
-  short_description: "Create and manage tasks through MCP"
+  display_name: "Deprecated: TaskForge MCP"
+  short_description: "Legacy workflow; prefer the TaskForge plugin"
   default_prompt: "Use $taskforge-mcp to create, update, search, and review tasks through a TaskForge MCP server."

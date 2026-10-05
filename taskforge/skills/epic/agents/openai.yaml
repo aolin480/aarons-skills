@@ -1,0 +1,4 @@
+interface:
+  display_name: "TaskForge Epic"
+  short_description: "Execute an activated serial epic workflow"
+  default_prompt: "Use $taskforge:epic for the requested epic workflow."

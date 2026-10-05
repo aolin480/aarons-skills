@@ -1,0 +1,4 @@
+interface:
+  display_name: "TaskForge Tasking"
+  short_description: "Create executable records from an agreed plan"
+  default_prompt: "Use $taskforge:tasking for the requested tasking workflow."

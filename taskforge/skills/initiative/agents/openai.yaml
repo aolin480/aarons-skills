@@ -1,0 +1,4 @@
+interface:
+  display_name: "TaskForge Initiative"
+  short_description: "Coordinate participant epics and integration proof"
+  default_prompt: "Use $taskforge:initiative for the requested initiative workflow."

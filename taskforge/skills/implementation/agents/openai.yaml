@@ -1,0 +1,4 @@
+interface:
+  display_name: "TaskForge Implementation"
+  short_description: "Implement a task through validation and review"
+  default_prompt: "Use $taskforge:implementation for the requested implementation workflow."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "TaskForge Merge"
+  short_description: "Merge an approved candidate and verify proof"
+  default_prompt: "Use $taskforge:merge for the requested merge workflow."

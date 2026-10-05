@@ -1,0 +1,4 @@
+interface:
+  display_name: "TaskForge Validation"
+  short_description: "Check a candidate and record truthful evidence"
+  default_prompt: "Use $taskforge:validation for the requested validation workflow."

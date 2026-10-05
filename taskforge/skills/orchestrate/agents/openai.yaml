@@ -1,0 +1,4 @@
+interface:
+  display_name: "TaskForge Orchestrate"
+  short_description: "Route TaskForge work within the requested scope"
+  default_prompt: "Use $taskforge:orchestrate for the requested orchestrate workflow."

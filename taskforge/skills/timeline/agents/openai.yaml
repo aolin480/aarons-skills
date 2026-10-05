@@ -1,0 +1,4 @@
+interface:
+  display_name: "TaskForge Timeline"
+  short_description: "Sequence existing work and select eligible tasks"
+  default_prompt: "Use $taskforge:timeline for the requested timeline workflow."
