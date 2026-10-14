@@ -1,7 +1,7 @@
 {
   "name": "taskforge",
-  "version": "0.1.2",
-  "description": "Plan, sequence, execute, and validate work through the TaskForge ledger.",
+  "version": "0.1.3",
+  "description": "Inspect, plan, sequence, execute, and validate work through the TaskForge ledger.",
   "license": "MIT",
   "author": {
     "name": "TaskForge maintainers"

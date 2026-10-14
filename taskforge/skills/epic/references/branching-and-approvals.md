@@ -45,7 +45,8 @@ Before taking a task:
    epic in an activated initiative workflow; or an applicable legacy
    `release/epic-*`.
 3. Stop on an arbitrary feature, personal, stale task, or unrelated branch.
-4. Call `prepare_task_branch` before editing.
+4. Call `prepare_task_branch` before editing, always passing `workspace` (e.g.
+   `{ workspace, id, projectPath }`).
 5. Confirm returned and persisted branch context.
 
 Create new task branches as

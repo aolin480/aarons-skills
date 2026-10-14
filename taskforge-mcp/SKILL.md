@@ -48,6 +48,16 @@ and stops before task creation; existing planning-board operations are timeline
 sequencing. For new plugin installs, prefer the explicit taskforge skill namespace.
 Do not load or call a second entry for the same operation.
 
+## MCP Schema Cheatsheet
+
+- `get_task`: `{ id }` (use the task ID, not `ticketNumber` or `taskId`).
+- `get_task_execution_packet`: `{ workspace, id }` or `{ workspace, ticketNumber }` (never `taskId`).
+- `update_task`: `{ workspace, id, payload: { ... } }` (never pass top-level fields; `validationPlan[].kind` is `test | lint | build | doctor | browser | debugger | review | manual`).
+- `append_task_commit_reference`: `{ workspace, id, commitHash, branchName }` (never `commit` or `branch`).
+- `append_task_validation`: `{ workspace, id, payload: { tool, status, summary, command, details, target, actor } }` (always wrap in `payload: { ... }`; `status` is `passed | failed | warning | skipped` and `summary` is `<= 280` chars).
+- `prepare_task_branch`: `{ workspace, id, projectPath, apply }` (always include `workspace`; preparation has no `approved` field).
+- `merge_task_branch`: `{ workspace, id, projectPath, targetBranch, apply, approved }` (always include `workspace`; `apply: true` requires `approved: true` and current merge authorization).
+
 ## TaskForge MCP Tool Guide
 
 Tool inventory is not permission to call a tool. Apply the workflow gates above.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "TaskForge Information"
+  short_description: "Inspect and audit existing TaskForge work"
+  default_prompt: "Use $taskforge:information to answer this read-only TaskForge question."

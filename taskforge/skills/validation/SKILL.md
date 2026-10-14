@@ -29,6 +29,13 @@ Stop after reporting evidence. Do not silently fix code, change lifecycle status
 merge, or move to done. When a shared checkpoint calls for repair, return control
 to the implementation or workflow caller; that caller owns authorized repair.
 
+## MCP Schema Cheatsheet
+
+- `get_task`: `{ id }` (use the task ID, not `ticketNumber` or `taskId`).
+- `get_task_execution_packet`: `{ workspace, id }` or `{ workspace, ticketNumber }` (never `taskId`).
+- `update_task`: `{ workspace, id, payload: { ... } }` (never pass top-level fields; `validationPlan[].kind` is `test | lint | build | doctor | browser | debugger | review | manual`).
+- `append_task_commit_reference`: `{ workspace, id, commitHash, branchName }` (never `commit` or `branch`).
+- `append_task_validation`: `{ workspace, id, payload: { tool, status, summary, command, details, target, actor } }` (always wrap in `payload: { ... }`; `status` is `passed | failed | warning | skipped`, `summary` is `<= 280` chars, and `validationPlan[].kind` is `test | lint | build | doctor | browser | debugger | review | manual`).
 
 ## TaskForge MCP Tool Guide
 

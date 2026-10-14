@@ -59,9 +59,11 @@ from the agreed plan. Do not add empty contracts or duplicate prose. Supported f
 
 - Reference kinds: `file`, `doc`, `ticket`, `url`, `command`,
   `artifact`, `other`.
-- Validation kinds: `test`, `lint`, `build`, `doctor`, `browser`,
-  `debugger`, `review`, `manual`.
+- Validation kinds (`validationPlan[].kind`): `test`, `lint`, `build`, `doctor`,
+  `browser`, `debugger`, `review`, `manual` (never invent unlisted enum values).
 - Skill priorities: `required`, `recommended`, `optional`.
+- `update_task` shape: `{ workspace, id, payload: { ... } }` (always wrap updated
+  fields in `payload: { ... }`, never at the top level).
 
 Executable child contracts must include at least one concrete safety
 constraint. Add privacy limits when the accepted scope handles sensitive data;

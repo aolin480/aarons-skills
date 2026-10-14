@@ -31,6 +31,15 @@ approval or activated scoped standing approval, and fresh candidate evidence.
    Return proof, actual results, limitations, and the
    [handoff](references/handoff.md). Clean branches only under the canonical rule.
 
+## MCP Schema Cheatsheet
+
+- `get_task`: `{ id }` (use the task ID, not `ticketNumber` or `taskId`).
+- `get_task_execution_packet`: `{ workspace, id }` or `{ workspace, ticketNumber }` (never `taskId`).
+- `update_task`: `{ workspace, id, payload: { ... } }` (never pass top-level fields).
+- `append_task_commit_reference`: `{ workspace, id, commitHash, branchName }` (never `commit` or `branch`).
+- `append_task_validation`: `{ workspace, id, payload: { tool, status, summary, command, details, target, actor } }` (always wrap in `payload: { ... }`; `status` is `passed | failed | warning | skipped` and `summary` is `<= 280` chars).
+- `prepare_task_branch`: `{ workspace, id, projectPath, apply }` (always include `workspace`; preparation has no `approved` field).
+- `merge_task_branch`: `{ workspace, id, projectPath, targetBranch, apply, approved }` (always include `workspace`; `apply: true` requires `approved: true` and current merge authorization).
 
 ## TaskForge MCP Tool Guide
 

@@ -35,20 +35,24 @@ client compatibility.
 
 ## Validation
 
-Use `append_task_validation` for checks with a clear result. Status is exactly
-`passed`, `failed`, `warning`, or `skipped`; aliases such as `pass`,
-`success`, or `error` are invalid.
+Use `append_task_validation` for checks with a clear result. Always wrap fields
+inside `payload: { ... }` (never pass top-level `tool`, `status`, or `summary`
+fields). Status is exactly `passed`, `failed`, `warning`, or `skipped`; aliases
+such as `pass`, `success`, or `error` are invalid, and `summary` must be `<= 280`
+characters.
 
 - `tool`: short tool or method name.
-- `status`: one allowed status.
-- `summary`: one concise result sentence.
+- `status`: one allowed status (`passed | failed | warning | skipped`).
+- `summary`: one concise result sentence (`<= 280` chars).
 - `command`: optional exact command.
 - `target`: optional file, route, viewport, project, package, or feature.
 - `details`: optional evidence, failure reason, or skip rationale.
 
 Record tests, smoke, browser, typecheck, lint, build, doctor, debugger, review,
-and manual checks. Use `warning` for partial evidence and `skipped` for an
-intentional or unavailable check. Never claim a check ran when it did not.
+and manual checks (note that in `validationPlan[]`, `kind` must be one of
+`test | lint | build | doctor | browser | debugger | review | manual`). Use
+`warning` for partial evidence and `skipped` for an intentional or unavailable
+check. Never claim a check ran when it did not.
 
 ```json
 {
@@ -70,7 +74,8 @@ attachment names when useful, but upload files instead of embedding bytes. Use
 
 ## Commit references
 
-After creating and verifying a commit, append its evidence:
+After creating and verifying a commit, append its evidence using exact keys
+`commitHash` and `branchName` (never `commit` or `branch`):
 
 ```json
 {

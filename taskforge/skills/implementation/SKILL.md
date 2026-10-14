@@ -29,6 +29,14 @@ Inputs are the exact task, workspace, current packets, and authorized scope.
    merge approval request. An activated epic caller may continue its own serial
    integration loop after this return; this entry grants no standing approval.
 
+## MCP Schema Cheatsheet
+
+- `get_task`: `{ id }` (use the task ID, not `ticketNumber` or `taskId`).
+- `get_task_execution_packet`: `{ workspace, id }` or `{ workspace, ticketNumber }` (never `taskId`).
+- `update_task`: `{ workspace, id, payload: { ... } }` (never pass top-level fields; `validationPlan[].kind` is `test | lint | build | doctor | browser | debugger | review | manual`).
+- `append_task_commit_reference`: `{ workspace, id, commitHash, branchName }` (never `commit` or `branch`).
+- `append_task_validation`: `{ workspace, id, payload: { tool, status, summary, command, details, target, actor } }` (always wrap in `payload: { ... }`; `status` is `passed | failed | warning | skipped`, `summary` is `<= 280` chars, and `validationPlan[].kind` is `test | lint | build | doctor | browser | debugger | review | manual`).
+- `prepare_task_branch`: `{ workspace, id, projectPath }` (never omit `workspace`).
 
 ## TaskForge MCP Tool Guide
 

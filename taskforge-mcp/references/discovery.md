@@ -21,9 +21,11 @@ context through create or update tools. Use `get_project_context` to inspect,
 `hash_project_path` for the runtime path hash, and `backfill_project_context`
 only for its supported historical repair workflow.
 
-If the user omitted the workspace, list choices and ask. If they supplied only
-a system or service, ask for the workspace instead of guessing. Treat workspace
-systems and services as authoritative.
+If a workspace-scoped request omits the workspace, list choices and ask. An
+explicitly global read-only initiative query or exact initiative lookup does
+not need a workspace. If the user supplied only a system or service for
+workspace-scoped work, ask for the workspace instead of guessing. Treat
+workspace systems and services as authoritative.
 
 ## Capability gate
 

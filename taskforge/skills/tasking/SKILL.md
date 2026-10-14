@@ -41,6 +41,15 @@ If the plan is not agreed, return that prerequisite to the caller before writes.
    [handoff](references/handoff.md). Do not start implementation, create a timeline,
    reset order, or activate epic/initiative execution from this invocation.
 
+## MCP Schema Cheatsheet
+
+- `get_task`: `{ id }` (use the task ID, not `ticketNumber` or `taskId`).
+- `get_task_execution_packet`: `{ workspace, id }` or `{ workspace, ticketNumber }` (never `taskId`).
+- `update_task`: `{ workspace, id, payload: { ... } }` (always wrap in `payload: { ... }`; never pass top-level fields).
+- `validationPlan[].kind`: must be one of `test | lint | build | doctor | browser | debugger | review | manual` (never invent enum values).
+- `append_task_commit_reference`: `{ workspace, id, commitHash, branchName }` (never `commit` or `branch`).
+- `append_task_validation`: `{ workspace, id, payload: { tool, status, summary, command, details, target, actor } }` (`summary` is `<= 280` chars).
+
 ## TaskForge MCP Tool Guide
 
 Tool inventory is not permission to call a tool. Apply the workflow gates above.

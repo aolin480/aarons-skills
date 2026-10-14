@@ -1,6 +1,6 @@
 ---
 name: orchestrate
-description: "Route a TaskForge request to the narrowest workflow or authorized sequence: engineering planning, tasking, timeline, implementation, validation, merge, epic, or initiative. Delegation remains opt-in."
+description: "Route a TaskForge request to the narrowest information or workflow skill: planning, tasking, timeline, implementation, validation, merge, epic, or initiative. Delegation remains opt-in."
 ---
 
 # TaskForge orchestrate
@@ -12,6 +12,7 @@ prerequisites and works without an earlier orchestrate invocation.
 
 | Action and object | Select | Completion boundary |
 | --- | --- | --- |
+| Ask about or audit existing work | information | Scoped read result; no ledger writes |
 | Plan a feature or defect | planning | Engineering plan; stop before records |
 | Create executable work from an agreed plan | tasking | Canonical records and blockers |
 | Change stages, order, parallel groups, or choose next work | timeline | Sequence or selection; no execution |
@@ -20,7 +21,7 @@ prerequisites and works without an earlier orchestrate invocation.
 | Merge an exact source and target | merge | Authorized apply and persisted proof |
 | Execute the explicit epic branch workflow | epic | Serial integration; final primary approval |
 | Coordinate initiative context or execute its activated workflow | initiative | Participant evidence; per-primary approval |
-| Look up records, context, capabilities, or health | discovery reference | Read result within requested scope |
+| Inspect project context, capabilities, or health | discovery reference | Read result within requested scope |
 | Append Notes or verified commit evidence; manage attachments | evidence reference | Only the requested sanitized evidence operation |
 | Inspect identity or open a protected TaskForge page | identity reference | Requested identity or authenticated browser result |
 
@@ -28,7 +29,8 @@ prerequisites and works without an earlier orchestrate invocation.
    word “plan” alone. Resolve ambiguous “update the plan” from context or one
    targeted question before any durable write.
 2. Invoke only the selected specialist and references needed for this request.
-   For pure lookup, read [discovery](references/discovery.md) and skip
+   Route record lookups and audits to information. For direct context or health
+   lookup, read [discovery](references/discovery.md) and skip
    `set_project_context` and other writes. For optional reducible reads, use
    [programmatic orchestration](references/programmatic-orchestration.md) only
    when advertised. Ledger operations need MCP; supplied-context planning does not.
